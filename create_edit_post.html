@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create and Edit</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 id="title_page">Create a New Post</h1>
+        <form id="createPostForm">
+            <div class="form-group">
+                <label for="author">ID</label>
+                <input type="text" class="form-control" id="id" disabled required>
+            </div>
+            <div class="form-group">
+                <label for="author">Author</label>
+                <input type="text" class="form-control" id="author" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <div class="form-group">
+                <label for="content">Title</label>
+                <input class="form-control" id="title" rows="5" required>
+            </div>
+            <div class="form-group">
+                <label for="content">Content</label>
+                <textarea class="form-control" id="content" rows="5" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Post</button>
+        </form>
+    </div>
+
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        const postId = getQueryParam('id');
+        const action = getQueryParam('action');
+
+        if (action === 'edit') {
+            document.getElementById('id').value = postId;
+            document.getElementById('title_page').textContent = 'Edit Post';
+        } else {
+            document.getElementById('title_page').textContent = 'Create a New Post';
+        }
+
+        $(document).ready(function () {
+            $.ajax({
+                url: `http://localhost:8080/api/v1/post/${postId}`,
+                method: "GET",
+                success: function (posts) {
+                    if (posts.code !== 200) {
+                        alert(posts.message);
+                        return;
+                    }
+                    document.getElementById('id').value = posts.data.id;
+                    document.getElementById('author').value = posts.data.author;
+                    document.getElementById('title').value = posts.data.title;
+                    document.getElementById('content').value = posts.data.content;
+                },
+                error: function (error) {
+                    console.error("Error fetching posts:", error);
+                }
+            });
+        });
+
+        $(document).ready(function () {
+            $('#createPostForm').submit(function (event) {
+                event.preventDefault();
+
+                const author = $('#author').val();
+                const password = $('#password').val();
+                const title = $('#title').val();
+                const content = $('#content').val();
+
+                const postData = {
+                    author: author,
+                    password: password,
+                    title: title,
+                    content: content
+                };
+
+                let url = 'http://localhost:8080/api/v1/post';
+                let type = 'POST';
+                if (action === 'edit') {
+                    url = `http://localhost:8080/api/v1/post/${postId}`;
+                    type = 'PUT';
+                }
+
+                $.ajax({
+                    url: url,
+                    type: type,
+                    contentType: 'application/json',
+                    data: JSON.stringify(postData),
+                    success: function(response) {
+                        console.log(response);
+                        if (response.code !== 200) {
+                            alert(response.message);
+                            return;
+                        }
+
+                        $('#author').val('');
+                        $('#password').val('');
+                        $('#content').val('');
+                        window.location.href='index.html'
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Error creating post: " + error);
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
